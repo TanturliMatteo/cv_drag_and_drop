@@ -1,0 +1,79 @@
+// Colonna a tutta altezza: il pulsante Esporta resta in fondo alla sidebar.
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 100%;
+  padding: 20px 16px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  margin: 0 0 8px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+// Voci di elenco: nessun bordo, solo hover leggero (minimal).
+.add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+
+  svg {
+    color: var(--color-muted);
+  }
+
+  &:hover {
+    background: var(--color-control-hover);
+
+    svg {
+      color: var(--color-accent);
+    }
+  }
+}
+
+.alert {
+  margin: 8px;
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+// margin-top: auto spinge il pulsante in fondo quando c'è spazio libero.
+.export {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  margin-top: auto;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--color-text);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+
+  &:hover {
+    opacity: 0.88;
+  }
+}
