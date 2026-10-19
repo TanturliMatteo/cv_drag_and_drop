@@ -5,12 +5,12 @@ import { TextStyleKit } from "@tiptap/extension-text-style";
 import TextAlign from "@tiptap/extension-text-align";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
-import { useEditor } from "../editorStore";
-import { LetterSpacing } from "../letterSpacing";
-import type { SheetItem } from "../types";
-import { ROW_HEIGHT_PX } from "./grid";
-import { NO_DRAG } from "./noDrag";
-import styles from "./Sheet.module.scss";
+import { NO_DRAG } from "../dnd/freeDrag";
+import { ROW_HEIGHT_PX } from "../model/grid";
+import type { SheetItem } from "../model/types";
+import { useEditor } from "../store/editorStore";
+import styles from "./Block.module.scss";
+import { LetterSpacing } from "./letterSpacing";
 
 // Estensioni condivise da tutti i blocchi. StarterKit ridotto a ciò che serve a
 // un CV: via titoli, citazioni, codice, link e riga orizzontale (hanno senso
@@ -32,6 +32,12 @@ const extensions = [
   Superscript,
   TextAlign.configure({ types: ["paragraph"] }),
 ];
+
+// Sfondo del blocco con la sua opacità: color-mix mescola il colore con il
+// trasparente, così il testo resta pieno e solo lo sfondo si schiarisce.
+const backgroundOf = ({ style }: SheetItem) =>
+  style.background &&
+  `color-mix(in srgb, ${style.background} ${(style.backgroundOpacity ?? 1) * 100}%, transparent)`;
 
 // Blocco di testo ricco. Tre stati: non selezionato (solo lettura), selezionato
 // (la TopBar formatta tutto il blocco) e in modifica (doppio clic: si scrive e
@@ -63,19 +69,28 @@ export default function TextBlock({ item }: { item: SheetItem }) {
     return () => setActiveEditor(null);
   }, [selected, editor, setActiveEditor]);
 
-  // Se il testo non entra più nel blocco (es. Invio a fine riga) lo allungo verso
-  // il basso di quante righe servono; fitHeight si ferma se sotto non c'è spazio.
-  // Si ascolta "update" (cambia il documento), non ogni transazione.
+  // Il blocco segue il testo: un a capo lo allunga di una riga, cancellarla lo
+  // restringe (fitHeight limita crescita e riduzione). Si ascolta "update"
+  // (cambia il documento), non ogni transazione.
   useEffect(() => {
     const box = boxRef.current;
     if (!box) return;
     // Il bordo rosso segue il confronto contenuto/blocco; setState non fa nulla
     // se il valore non cambia.
     const measure = () => setOverflowing(box.scrollHeight > box.clientHeight);
+    // Righe di griglia occupate dal contenuto reale: dal bordo alto del testo al
+    // fondo dell'ultimo paragrafo (scrollHeight non basta: non scende mai sotto
+    // l'altezza del box, quindi non permette di accorgersi che si può restringere).
+    const contentRows = () => {
+      const doc = box.querySelector(".ProseMirror");
+      const last = doc?.lastElementChild;
+      if (!doc || !last) return 1;
+      const height =
+        last.getBoundingClientRect().bottom - doc.getBoundingClientRect().top;
+      return Math.max(1, Math.ceil(height / ROW_HEIGHT_PX));
+    };
     const fit = () => {
-      if (box.scrollHeight > box.clientHeight) {
-        fitHeight(item.id, Math.ceil(box.scrollHeight / ROW_HEIGHT_PX));
-      }
+      fitHeight(item.id, contentRows());
       measure();
     };
     editor.on("update", fit);
@@ -100,6 +115,7 @@ export default function TextBlock({ item }: { item: SheetItem }) {
     <div
       ref={boxRef}
       className={`${styles.text} ${editing ? NO_DRAG : ""} ${overflowing ? styles.overflowing : ""}`}
+      style={{ background: backgroundOf(item) }}
       title={overflowing ? "Il testo non entra: ingrandisci il blocco" : undefined}
       // Doppio clic per modificare: il clic singolo serve a selezionare/trascinare.
       onDoubleClick={() => setEditing(true)}

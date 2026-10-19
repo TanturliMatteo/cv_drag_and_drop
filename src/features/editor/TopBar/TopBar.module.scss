@@ -36,8 +36,8 @@
   font-size: 13px;
   cursor: pointer;
   transition:
-    background-color 0.12s ease,
-    border-color 0.12s ease;
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
 
   &:hover:not(:disabled) {
     background: var(--color-control-hover);
@@ -130,4 +130,82 @@
   @extend %control;
   padding: 0 12px;
   border-color: var(--color-border);
+}
+
+// Pannello flottante sotto un pulsante (es. slider dell'opacità): fuori dal flusso,
+// quindi non sposta né allarga nulla nella barra.
+.popoverAnchor {
+  position: relative;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0; // allineato al bordo destro del pulsante: non esce dalla finestra se il gruppo è in fondo alla barra
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-popup);
+  font-size: 12px;
+  color: var(--color-muted);
+
+  input[type="range"] {
+    appearance: none;
+    width: 120px;
+    height: 14px; // spazio per il pallino; il binario è disegnato a parte
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  output {
+    min-width: 32px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// Slider minimale: binario sottile, pallino nel colore accento.
+@mixin slider-track {
+  height: 2px;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+@mixin slider-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-accent);
+  transition: transform var(--transition-fast);
+}
+
+.popover input[type="range"] {
+  &::-webkit-slider-runnable-track {
+    @include slider-track;
+  }
+
+  &::-moz-range-track {
+    @include slider-track;
+  }
+
+  &::-webkit-slider-thumb {
+    @include slider-thumb;
+
+    appearance: none;
+    margin-top: -5px; // centra il pallino (12px) sul binario (2px)
+  }
+
+  &::-moz-range-thumb {
+    @include slider-thumb;
+  }
+
+  &:hover::-webkit-slider-thumb {
+    transform: scale(1.2);
+  }
 }

@@ -1,0 +1,60 @@
+@use "../../../styles/mixins" as *;
+
+.dialog {
+  @include dialog(440px, 28px);
+}
+
+.close {
+  @include plain-button;
+
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--color-muted);
+}
+
+.title {
+  @include dialog-title;
+
+  font-size: 20px;
+}
+
+.text {
+  @include dialog-text;
+}
+
+// Segnaposto dell'inserzione: qui andrà il codice del circuito pubblicitario.
+.ad {
+  @include dashed-box;
+
+  display: grid;
+  place-items: center;
+  height: 200px;
+  margin-bottom: 20px;
+  background: var(--color-workspace);
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.confirm {
+  @include solid-button;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 44px;
+
+  // Durante il conto alla rovescia il pulsante è spento.
+  &:disabled {
+    background: var(--color-border);
+    color: var(--color-muted);
+    cursor: progress;
+  }
+}

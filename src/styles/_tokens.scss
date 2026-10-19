@@ -4,19 +4,27 @@
   --font-ui: "Inter", system-ui, sans-serif;
 
   --color-bg: #fff;
+  --color-on-accent: #fff; // testo su accento e su sfondi scuri
   --color-workspace: #f4f4f5;
   --color-border: #e4e4e7;
   --color-text: #18181b;
   --color-muted: #71717a;
   --color-control-hover: #f4f4f5;
-  --color-hover: #18181b; // usato dall'Header
   --color-accent: #4f46e5;
   --color-accent-soft: rgb(79 70 229 / 0.1);
+  --color-accent-outline: rgb(79 70 229 / 0.35);
+  --color-danger: #dc2626;
+  --color-overlay: rgb(24 24 27 / 0.5); // sfondo dietro ai dialog
+  --color-grid-line: rgb(0 0 0 / 0.05);
 
   --radius-control: 6px;
   --radius-block: 8px; // angoli dei blocchi sul foglio
+  --radius-lg: 12px; // card, dialog, pannelli
   --shadow-sheet:
     0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px -4px rgb(0 0 0 / 0.1);
+  --shadow-popup: 0 24px 64px -12px rgb(0 0 0 / 0.35);
+
+  --transition-fast: 0.12s ease; // hover e cambi di stato dei controlli
 
   --sidebar-width: 248px;
   --topbar-height: 56px;

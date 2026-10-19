@@ -1,5 +1,6 @@
 // Il foglio: bianco con ombra morbida, come carta sopra la scrivania.
 .sheet {
+  position: relative; // ancora del watermark
   width: 210mm;
   aspect-ratio: 210 / 297;
   margin: 0 auto;
@@ -9,9 +10,14 @@
   // Due gradienti: uno disegna le linee verticali, l'altro le orizzontali.
   // Ognuno è "1px di colore, poi trasparente", ripetuto ogni cella.
   background-image:
-    linear-gradient(to right, rgb(0 0 0 / 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(0 0 0 / 0.05) 1px, transparent 1px);
+    linear-gradient(to right, var(--color-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-grid-line) 1px, transparent 1px);
   background-size: var(--col-width) var(--row-height);
+}
+
+// Sfocato quando la scheda è nascosta o si preme Stamp (vedi useScreenGuard).
+.blurred {
+  filter: blur(14px);
 }
 
 // Blocco: angoli arrotondati (clippano anche le immagini, quindi valgono nel
@@ -20,14 +26,23 @@
 .item {
   border-radius: var(--radius-block);
   outline: 1.5px solid transparent;
-  // clip, non hidden: un contenitore "hidden" è comunque scorribile dal browser
-  // (il cursore che esce dal bordo lo fa scorrere e le prime righe spariscono);
-  // "clip" taglia e basta.
-  overflow: clip;
-  transition: outline-color 0.12s ease;
+  transition: outline-color var(--transition-fast);
+  // Il trascinamento è nostro (freeDrag.ts): niente scroll da touch né selezione
+  // di testo mentre si sposta; il testo in modifica (no-drag) resta selezionabile.
+  touch-action: none;
+  user-select: none;
 
   &:hover {
-    outline-color: rgb(79 70 229 / 0.35);
+    outline-color: var(--color-accent-outline);
+  }
+
+  :global(.no-drag) {
+    user-select: text;
+  }
+
+  // La maniglia di resize compare solo sul blocco selezionato.
+  :global(.react-resizable-handle) {
+    display: none;
   }
 }
 
@@ -37,11 +52,7 @@
   z-index: 1;
 }
 
-// Maniglia di ridimensionamento: solo sul selezionato, angolino nel colore accento.
-.item :global(.react-resizable-handle) {
-  display: none;
-}
-
+// Angolino della maniglia, nel colore accento.
 .selected :global(.react-resizable-handle) {
   display: block;
 
@@ -56,11 +67,25 @@
   }
 }
 
+// Contenuto del blocco: è lui a tagliare ciò che esce dai bordi (e a dare gli
+// angoli arrotondati alle immagini), così il pulsante × può sporgere dal blocco.
+// clip, non hidden: un contenitore "hidden" è comunque scorribile dal browser
+// (il cursore che esce dal bordo lo fa scorrere e le prime righe spariscono);
+// "clip" taglia e basta.
+.content {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: clip;
+}
+
 // Pulsante di eliminazione: tondo, scuro, visibile solo sul blocco selezionato.
+// A cavallo dell'angolo in alto a destra: sporge dal blocco, quindi non copre il
+// contenuto nemmeno quando il blocco è molto piccolo.
 .remove {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: -10px;
+  right: -10px;
   z-index: 2;
   display: grid;
   place-items: center;
@@ -70,115 +95,31 @@
   border: 0;
   border-radius: 50%;
   background: var(--color-text);
-  color: #fff;
+  color: var(--color-on-accent);
   cursor: pointer;
   opacity: 0.85;
 
   &:hover {
     opacity: 1;
-    background: #b91c1c;
+    background: var(--color-danger);
   }
 }
 
-// Testo ricco: l'editor ProseMirror riempie il blocco. Font e interlinea di
-// partenza sono quelli di un CV; ogni modifica dell'utente è uno style inline.
-.text {
-  width: 100%;
-  height: 100%;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 14px;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-  position: relative;
-
-  // Il wrapper di EditorContent deve riempire il blocco, altrimenti l'height
-  // percentuale di ProseMirror non ha un riferimento.
-  > div {
-    height: 100%;
-  }
-
-  :global(.ProseMirror) {
-    height: 100%;
-    outline: 0;
-  }
-
-  :global(.ProseMirror p) {
-    margin: 0;
-    min-height: 1lh; // un paragrafo vuoto resta alto una riga
-  }
-
-  :global(.ProseMirror ul),
-  :global(.ProseMirror ol) {
-    margin: 0;
-    padding-left: 1.4em;
-  }
-}
-
-// Testo che non entra nel blocco: barra rossa sul bordo inferiore, perché la
-// parte oltre il bordo resta nascosta. Solo nell'editor, non nel PDF.
-.overflowing::after {
-  content: "";
+// Watermark: testo in diagonale ripetuto, come SVG inline (nessuna richiesta).
+// pointer-events: none lo rende trasparente a drag e clic.
+.watermark {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 3px;
-  background: #dc2626;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='180'%3E%3Ctext x='20' y='110' transform='rotate(-25 130 90)' font-family='Arial' font-size='18' font-weight='700' fill='%23000' fill-opacity='0.07'%3ECV Drag %26 Drop%3C/text%3E%3C/svg%3E");
 }
 
-// Linea orizzontale al centro verticale del blocco; l'altezza (spessore) è inline.
-.lineBox {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-}
-
-.line {
-  width: 100%;
-  border-radius: 999px;
-}
-
-.image {
-  width: 100%;
-  height: 100%;
-  // cover: l'immagine riempie sempre il blocco (ritagliando se serve), quindi
-  // la sua dimensione segue il contenitore e non si vedono bande vuote.
-  object-fit: cover;
-  user-select: none;
-}
-
-// Segnaposto dell'immagine: riquadro tratteggiato discreto, solo nell'editor.
-.placeholder {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  border: 1.5px dashed var(--color-border);
-  border-radius: var(--radius-block);
-  font-size: 12px;
-  color: var(--color-muted);
-  cursor: pointer;
-
-  &:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-  }
-}
-
-// Icona SVG (lucide). Il blocco è un container: il simbolo si adatta al lato
-// minore, quindi non viene tagliato quando il blocco si riduce a una cella.
-.icon {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  container-type: size;
-
-  svg {
-    width: min(80cqw, 80cqh);
-    height: min(80cqw, 80cqh);
-  }
+// Ombra (placeholder di RGL) disattivata: con lo scatto da cella a cella
+// risultava fastidiosa. Il blocco trascinato segue comunque il mouse; la cella
+// di arrivo si decide al rilascio. Per riattivarla basta togliere questa regola.
+.sheet :global(.react-grid-item.react-grid-placeholder) {
+  display: none;
 }
 
 // Stampa/PDF: solo il foglio, senza griglia, ombra, contorni, pulsanti e maniglie.
@@ -187,6 +128,11 @@
     margin: 0;
     background-image: none;
     box-shadow: none;
+    // Il foglio è esattamente 297mm: senza clip l'arrotondamento può generare
+    // una seconda pagina vuota.
+    height: 297mm;
+    overflow: clip;
+    break-after: avoid;
   }
 
   .item,
@@ -194,16 +140,8 @@
     outline: 0;
   }
 
-  .overflowing::after {
-    display: none;
-  }
-
-  .placeholder {
-    border: 0;
-    color: transparent;
-  }
-
   .remove,
+  .watermark,
   .sheet :global(.react-resizable-handle) {
     display: none;
   }

@@ -1,11 +1,11 @@
 import { createElement, type ChangeEvent } from "react";
-import { useEditor } from "../editorStore";
-import type { SheetItem } from "../types";
-import styles from "./Sheet.module.scss";
-import { NO_DRAG } from "./noDrag";
+import { iconFor } from "../catalog/iconRegistry";
+import { NO_DRAG } from "../dnd/freeDrag";
+import { DEFAULT_THICKNESS } from "../model/defaults";
+import type { SheetItem } from "../model/types";
+import { useEditor } from "../store/editorStore";
+import styles from "./Block.module.scss";
 import TextBlock from "./TextBlock";
-import { iconFor } from "../iconRegistry";
-import { DEFAULT_THICKNESS } from "../placement";
 
 // Legge un file immagine come data URL: così il contenuto resta una semplice
 // stringa nel modello e sopravvive a un eventuale salvataggio.
