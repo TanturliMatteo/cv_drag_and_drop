@@ -12,6 +12,42 @@ body,
 }
 
 body {
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-ui);
+  color: var(--color-text);
   background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+// I controlli ereditano font e colore: di default il browser usa i propri.
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+// Focus visibile solo da tastiera, con l'accento.
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+// Pagina A4 senza i margini che il browser aggiunge di default.
+@page {
+  size: A4;
+  margin: 0;
+}
+
+// Senza questo il browser toglie i colori di sfondo e di bordo in stampa.
+@media print {
+  * {
+    print-color-adjust: exact;
+  }
+
+  html,
+  body,
+  #root {
+    height: auto;
+  }
 }

@@ -1,7 +1,210 @@
-// Sheet.module.scss
+// Il foglio: bianco con ombra morbida, come carta sopra la scrivania.
 .sheet {
   width: 210mm;
   aspect-ratio: 210 / 297;
   margin: 0 auto;
-  background: white;
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-sheet);
+
+  // Due gradienti: uno disegna le linee verticali, l'altro le orizzontali.
+  // Ognuno è "1px di colore, poi trasparente", ripetuto ogni cella.
+  background-image:
+    linear-gradient(to right, rgb(0 0 0 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.05) 1px, transparent 1px);
+  background-size: var(--col-width) var(--row-height);
+}
+
+// Blocco: angoli arrotondati (clippano anche le immagini, quindi valgono nel
+// PDF). Il contorno è invisibile a riposo, leggero al passaggio del mouse e
+// pieno quando è selezionato.
+.item {
+  border-radius: var(--radius-block);
+  outline: 1.5px solid transparent;
+  // clip, non hidden: un contenitore "hidden" è comunque scorribile dal browser
+  // (il cursore che esce dal bordo lo fa scorrere e le prime righe spariscono);
+  // "clip" taglia e basta.
+  overflow: clip;
+  transition: outline-color 0.12s ease;
+
+  &:hover {
+    outline-color: rgb(79 70 229 / 0.35);
+  }
+}
+
+.selected,
+.selected:hover {
+  outline-color: var(--color-accent);
+  z-index: 1;
+}
+
+// Maniglia di ridimensionamento: solo sul selezionato, angolino nel colore accento.
+.item :global(.react-resizable-handle) {
+  display: none;
+}
+
+.selected :global(.react-resizable-handle) {
+  display: block;
+
+  &::after {
+    right: 5px;
+    bottom: 5px;
+    width: 7px;
+    height: 7px;
+    border-color: var(--color-accent);
+    border-width: 0 2px 2px 0;
+    border-radius: 0 0 3px 0;
+  }
+}
+
+// Pulsante di eliminazione: tondo, scuro, visibile solo sul blocco selezionato.
+.remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-text);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.85;
+
+  &:hover {
+    opacity: 1;
+    background: #b91c1c;
+  }
+}
+
+// Testo ricco: l'editor ProseMirror riempie il blocco. Font e interlinea di
+// partenza sono quelli di un CV; ogni modifica dell'utente è uno style inline.
+.text {
+  width: 100%;
+  height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  position: relative;
+
+  // Il wrapper di EditorContent deve riempire il blocco, altrimenti l'height
+  // percentuale di ProseMirror non ha un riferimento.
+  > div {
+    height: 100%;
+  }
+
+  :global(.ProseMirror) {
+    height: 100%;
+    outline: 0;
+  }
+
+  :global(.ProseMirror p) {
+    margin: 0;
+    min-height: 1lh; // un paragrafo vuoto resta alto una riga
+  }
+
+  :global(.ProseMirror ul),
+  :global(.ProseMirror ol) {
+    margin: 0;
+    padding-left: 1.4em;
+  }
+}
+
+// Testo che non entra nel blocco: barra rossa sul bordo inferiore, perché la
+// parte oltre il bordo resta nascosta. Solo nell'editor, non nel PDF.
+.overflowing::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: #dc2626;
+}
+
+// Linea orizzontale al centro verticale del blocco; l'altezza (spessore) è inline.
+.lineBox {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.line {
+  width: 100%;
+  border-radius: 999px;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  // cover: l'immagine riempie sempre il blocco (ritagliando se serve), quindi
+  // la sua dimensione segue il contenitore e non si vedono bande vuote.
+  object-fit: cover;
+  user-select: none;
+}
+
+// Segnaposto dell'immagine: riquadro tratteggiato discreto, solo nell'editor.
+.placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-block);
+  font-size: 12px;
+  color: var(--color-muted);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+}
+
+// Icona SVG (lucide). Il blocco è un container: il simbolo si adatta al lato
+// minore, quindi non viene tagliato quando il blocco si riduce a una cella.
+.icon {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  container-type: size;
+
+  svg {
+    width: min(80cqw, 80cqh);
+    height: min(80cqw, 80cqh);
+  }
+}
+
+// Stampa/PDF: solo il foglio, senza griglia, ombra, contorni, pulsanti e maniglie.
+@media print {
+  .sheet {
+    margin: 0;
+    background-image: none;
+    box-shadow: none;
+  }
+
+  .item,
+  .selected {
+    outline: 0;
+  }
+
+  .overflowing::after {
+    display: none;
+  }
+
+  .placeholder {
+    border: 0;
+    color: transparent;
+  }
+
+  .remove,
+  .sheet :global(.react-resizable-handle) {
+    display: none;
+  }
 }
