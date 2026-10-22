@@ -69,6 +69,7 @@
 .placeholder {
   @include dashed-box;
 
+  border-radius: 50%; // come la foto
   display: grid;
   place-items: center;
   width: 100%;

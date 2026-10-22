@@ -6,7 +6,8 @@ import type { BlockType } from "./types";
 export const DEFAULT_SIZE: Record<BlockType, { w: number; h: number }> = {
   text: { w: 12, h: 3 },
   line: { w: 24, h: 1 },
-  image: { w: 8, h: 8 },
+  // Celle non quadrate (8,75×6,19 mm): 6×9 dà una foto quasi tonda (52×56 mm).
+  image: { w: 6, h: 9 },
   icon: { w: 3, h: 3 },
 };
 

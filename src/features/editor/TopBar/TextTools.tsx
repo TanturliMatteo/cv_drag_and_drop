@@ -15,6 +15,7 @@ import {
   Italic,
   List,
   ListOrdered,
+  Menu,
   MoveHorizontal,
   MoveVertical,
   Redo2,
@@ -26,7 +27,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { DEFAULT_FONT, FONTS } from "../catalog/fonts";
-import { ColorTool, Group, IconSelect, Tool } from "./controls";
+import { ColorTool, Group, IconSelect, PopoverTool, Tool } from "./controls";
 import styles from "./TopBar.module.scss";
 
 // Dimensioni in px, da 4 a 72 di due in due. Il testo parte da 14px (vedi Block.module.scss).
@@ -187,15 +188,39 @@ export default function TextTools({ editor }: { editor: Editor }) {
       </Group>
 
       <Group>
-        {ALIGNS.map(({ value, label, Icon }) => (
-          <Tool
-            key={value}
-            label={label}
-            Icon={Icon}
-            active={s.align === value}
-            onClick={() => run().setTextAlign(value).run()}
-          />
-        ))}
+        {/* Con poco spazio (container query in TopBar.module.scss) i quattro
+            pulsanti diventano un solo menu hamburger. */}
+        <div className={styles.alignInline}>
+          {ALIGNS.map(({ value, label, Icon }) => (
+            <Tool
+              key={value}
+              label={label}
+              Icon={Icon}
+              active={s.align === value}
+              onClick={() => run().setTextAlign(value).run()}
+            />
+          ))}
+        </div>
+        <div className={styles.alignMenu}>
+          <PopoverTool label="Allineamento" Icon={Menu}>
+            {(close) => (
+              <div className={styles.menuRow}>
+                {ALIGNS.map(({ value, label, Icon }) => (
+                  <Tool
+                    key={value}
+                    label={label}
+                    Icon={Icon}
+                    active={s.align === value}
+                    onClick={() => {
+                      run().setTextAlign(value).run();
+                      close();
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </PopoverTool>
+        </div>
       </Group>
 
       <Group>

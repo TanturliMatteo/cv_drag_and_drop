@@ -25,7 +25,7 @@ export function Tool(props: {
       onMouseDown={(e) => e.preventDefault()}
       onClick={props.onClick}
     >
-      <props.Icon size={16} strokeWidth={1.75} />
+      <props.Icon size={18} strokeWidth={1.75} />
     </button>
   );
 }
@@ -40,7 +40,7 @@ export function ColorTool(props: {
 }) {
   return (
     <label className={styles.tool} title={props.label}>
-      <props.Icon size={16} strokeWidth={1.75} />
+      <props.Icon size={18} strokeWidth={1.75} />
       <span className={styles.swatch} style={{ background: props.value }} />
       <input
         className={styles.colorInput}
@@ -69,7 +69,7 @@ export function IconSelect(props: {
     : [props.value, ...props.options];
   return (
     <label className={styles.iconSelect} title={props.label}>
-      <props.Icon size={15} strokeWidth={1.75} />
+      <props.Icon size={17} strokeWidth={1.75} />
       <select
         aria-label={props.label}
         value={props.value}
@@ -89,55 +89,75 @@ export const Group = ({ children }: { children: ReactNode }) => (
   <div className={styles.group}>{children}</div>
 );
 
-// Pulsante a icona che apre un piccolo pannello flottante con uno slider minimale
-// (es. opacità). Il pannello è in posizione assoluta sotto il pulsante: nella
-// barra occupa solo 32px e non ne cambia mai la larghezza né l'altezza.
+// Pulsante a icona che apre un pannello flottante (slider, menu). Il pannello è
+// `fixed` sotto il pulsante: non sposta nulla nella barra e non viene tagliato
+// dallo scorrimento orizzontale della barra stessa.
+export function PopoverTool(props: {
+  label: string;
+  Icon: LucideIcon;
+  children: ReactNode | ((close: () => void) => ReactNode);
+}) {
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const open = pos !== null;
+  const close = () => setPos(null);
+
+  // Si chiude con un clic fuori, con Esc o ridimensionando la finestra (la
+  // posizione fixed non seguirebbe più il pulsante).
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!boxRef.current?.contains(e.target as Node)) setPos(null);
+    };
+    const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && setPos(null);
+    const onResize = () => setPos(null);
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", onResize);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [open]);
+
+  const toggle = () => {
+    const r = boxRef.current?.getBoundingClientRect();
+    // Allineato al bordo destro del pulsante: non esce dalla finestra.
+    setPos(open || !r ? null : { top: r.bottom + 6, right: window.innerWidth - r.right });
+  };
+
+  return (
+    <div ref={boxRef} className={styles.popoverAnchor}>
+      <Tool label={props.label} Icon={props.Icon} active={open} onClick={toggle} />
+      {pos && (
+        <div className={styles.popover} style={pos}>
+          {typeof props.children === "function" ? props.children(close) : props.children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Slider minimale in un pannello flottante (es. opacità).
 export function SliderTool(props: {
   label: string;
   Icon: LucideIcon;
   value: number; // 0–100
   onChange: (value: number) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const boxRef = useRef<HTMLDivElement>(null);
-
-  // Si chiude con un clic fuori o con Esc.
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e: PointerEvent) => {
-      if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
   return (
-    <div ref={boxRef} className={styles.popoverAnchor}>
-      <Tool
-        label={`${props.label}: ${props.value}%`}
-        Icon={props.Icon}
-        active={open}
-        onClick={() => setOpen((o) => !o)}
+    <PopoverTool label={`${props.label}: ${props.value}%`} Icon={props.Icon}>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        aria-label={props.label}
+        value={props.value}
+        onChange={(e) => props.onChange(Number(e.target.value))}
       />
-      {open && (
-        <div className={styles.popover}>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={1}
-            aria-label={props.label}
-            value={props.value}
-            onChange={(e) => props.onChange(Number(e.target.value))}
-          />
-          <output>{props.value}%</output>
-        </div>
-      )}
-    </div>
+      <output>{props.value}%</output>
+    </PopoverTool>
   );
 }

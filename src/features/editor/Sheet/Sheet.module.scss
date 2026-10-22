@@ -52,19 +52,108 @@
   z-index: 1;
 }
 
-// Angolino della maniglia, nel colore accento.
-.selected :global(.react-resizable-handle) {
+// La foto è tonda (ellisse se il blocco non è quadrato). Il raggio sta sul blocco:
+// .content lo eredita e ritaglia l'immagine, il contorno di selezione lo segue.
+.round {
+  border-radius: 50%;
+}
+
+// Maniglie di resize su tutti i lati e angoli, solo sul blocco selezionato.
+// Ridisegno quelle di react-resizable (frecce ruotate): i lati sono fasce
+// invisibili da 10px a cavallo del bordo, gli angoli quadratini da 14px con un
+// pallino nel colore accento. Gli angoli stanno sopra i lati (z-index). Selettori
+// più specifici di quelli di react-grid-layout, che altrimenti rimetterebbero la
+// rotazione delle frecce.
+.sheet .selected > :global(.react-resizable-handle[class*="react-resizable-handle-"]) {
   display: block;
+  opacity: 1;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  background: none;
+  transform: none;
+  z-index: 1;
 
   &::after {
-    right: 5px;
-    bottom: 5px;
-    width: 7px;
-    height: 7px;
-    border-color: var(--color-accent);
-    border-width: 0 2px 2px 0;
-    border-radius: 0 0 3px 0;
+    content: none;
   }
+}
+
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-n),
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-s) {
+  left: 7px;
+  right: 7px;
+  height: 10px;
+  cursor: ns-resize;
+}
+
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-n) {
+  top: -5px;
+}
+
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-s) {
+  top: auto;
+  bottom: -5px;
+}
+
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-e),
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-w) {
+  top: 7px;
+  bottom: 7px;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-e) {
+  right: -5px;
+  left: auto;
+}
+
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-w) {
+  left: -5px;
+}
+
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-ne),
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-nw),
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-se),
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-sw) {
+  width: 14px;
+  height: 14px;
+  z-index: 2;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border: 1.5px solid var(--color-accent);
+    border-radius: 50%;
+    background: var(--color-bg);
+  }
+}
+
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-ne) {
+  top: -7px;
+  right: -7px;
+  cursor: nesw-resize;
+}
+
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-nw) {
+  top: -7px;
+  left: -7px;
+  cursor: nwse-resize;
+}
+
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-se) {
+  bottom: -7px;
+  right: -7px;
+  cursor: nwse-resize;
+}
+
+.sheet .selected > :global(.react-resizable-handle.react-resizable-handle-sw) {
+  bottom: -7px;
+  left: -7px;
+  cursor: nesw-resize;
 }
 
 // Contenuto del blocco: è lui a tagliare ciò che esce dai bordi (e a dare gli

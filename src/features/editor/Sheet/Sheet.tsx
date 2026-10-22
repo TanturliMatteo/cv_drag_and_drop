@@ -50,6 +50,13 @@ const compactor = getCompactor(null, false, true);
 // il rilascio dalla sidebar.
 const dragConfig = { enabled: false };
 
+// Resize da tutti i lati e angoli (RGL v2 di default ha solo l'angolo in basso a
+// destra); l'aspetto delle maniglie è in Sheet.module.scss.
+const resizeConfig = {
+  enabled: true,
+  handles: ["n", "s", "e", "w", "ne", "nw", "se", "sw"] as const,
+};
+
 // Rilascio dalla sidebar: dimensione del blocco in arrivo = quella del tipo
 // trascinato; senza un blocco della sidebar in corso (es. file dal desktop) rifiuta.
 const dropConfig = {
@@ -110,6 +117,7 @@ export default function Sheet() {
         gridConfig={gridConfig}
         dragConfig={dragConfig}
         dropConfig={dropConfig}
+        resizeConfig={resizeConfig}
         compactor={compactor}
         autoSize={false}
         style={containerStyle}
@@ -123,7 +131,9 @@ export default function Sheet() {
           return (
             <div
               key={item.id}
-              className={`${styles.item} ${selected ? styles.selected : ""}`}
+              className={`${styles.item} ${selected ? styles.selected : ""} ${
+                item.type === "image" ? styles.round : ""
+              }`}
               onClick={() => select(item.id)}
               onPointerDown={(e) =>
                 startFreeDrag(
