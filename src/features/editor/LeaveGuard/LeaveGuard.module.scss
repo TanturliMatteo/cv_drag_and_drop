@@ -1,0 +1,41 @@
+@use "../../../styles/mixins" as *;
+
+.dialog {
+  @include dialog(380px);
+}
+
+.title {
+  @include dialog-title;
+}
+
+.text {
+  @include dialog-text;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.stay,
+.leave {
+  height: 38px;
+  padding: 0 16px;
+}
+
+.stay {
+  @include solid-button;
+}
+
+.leave {
+  @include plain-button;
+
+  background: var(--color-control-hover);
+  font-size: 14px;
+  font-weight: 500;
+
+  &:hover {
+    background: var(--color-border);
+  }
+}

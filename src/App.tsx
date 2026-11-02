@@ -1,9 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
-
-import SiteLayout from "./layouts/SiteLayouts/SiteLayouts";
-import Home from "./pages/Home";
-import EditorPage from "./pages/EditorPage/EditorPage";
-import NotFoundPage from "./pages/NotFoundPage";
+import SiteLayout from "./layouts/SiteLayout/SiteLayout";
+import Home from "./pages/Home/Home";
+import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
 
 const router = createBrowserRouter([
   {
@@ -13,7 +11,14 @@ const router = createBrowserRouter([
       { path: "*", element: <NotFoundPage /> },
     ],
   },
-  { path: "editor", element: <EditorPage /> },
+  {
+    // L'editor (Tiptap, font, griglia) è la parte pesante: si scarica solo
+    // quando serve, così home e 404 restano leggere.
+    path: "editor",
+    lazy: async () => ({
+      Component: (await import("./pages/EditorPage/EditorPage")).default,
+    }),
+  },
 ]);
 
 function App() {

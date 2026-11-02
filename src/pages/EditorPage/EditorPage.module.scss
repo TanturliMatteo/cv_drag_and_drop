@@ -18,7 +18,7 @@
   flex-direction: column;
 }
 
-// min-height (non height): la TopBar può andare su due righe senza uscire dal box.
+// La TopBar può andare su più righe: l'altezza segue il contenuto.
 .topbar {
   flex-shrink: 0;
   background: var(--color-bg);
