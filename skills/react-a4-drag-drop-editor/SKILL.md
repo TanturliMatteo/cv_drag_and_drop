@@ -1,6 +1,6 @@
 ---
 name: react-a4-drag-drop-editor
-description: Use when the user asks to build a drag-and-drop page editor, document or CV builder, A4 sheet layout, or print-to-PDF export in React. Covers react-grid-layout v2 setup, free-form block dragging, Tiptap rich-text blocks with auto-height, mm-accurate grid geometry and A4 print CSS.
+description: Use when the user asks to build a drag-and-drop editor in React, such as a CV builder, resume maker, A4 page layout tool, or print-to-PDF export. Trigger phrases - "drag and drop editor", "CV builder", "A4 sheet", "react-grid-layout", "export to PDF". Covers react-grid-layout v2 setup, free-form block dragging, Tiptap text blocks with auto-height, mm-accurate grid geometry and A4 print CSS.
 ---
 
 # React A4 drag-and-drop editor

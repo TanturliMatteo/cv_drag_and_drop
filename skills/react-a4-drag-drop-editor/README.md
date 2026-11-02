@@ -2,7 +2,7 @@
 
 Agent skill for building a drag-and-drop editor on a fixed A4 sheet with React, react-grid-layout v2 and Tiptap 3, with PDF export through the browser print dialog.
 
-Derived from a working project: [CV Drag & Drop](https://github.com/) (replace with the repo URL).
+Derived from a working project: [CV Drag & Drop](https://github.com/TanturliMatteo/cv_drag_and_drop).
 
 ## Contents
 
