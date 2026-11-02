@@ -1,4 +1,4 @@
-import { useCallback, useEffect, type CSSProperties } from "react";
+import { useCallback, type CSSProperties } from "react";
 import { X } from "lucide-react";
 import ReactGridLayout, {
   getCompactor,
@@ -7,9 +7,10 @@ import ReactGridLayout, {
 } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
-import styles from "./Sheet.module.scss";
-import Block from "./Block";
-import { NO_DRAG } from "./noDrag";
+import Block from "../blocks/Block";
+import { dragState } from "../dnd/dragState";
+import { NO_DRAG, startFreeDrag } from "../dnd/freeDrag";
+import { DEFAULT_SIZE } from "../model/defaults";
 import {
   COL_WIDTH_PX,
   GRID_COLS,
@@ -17,10 +18,15 @@ import {
   ROW_HEIGHT_PX,
   SHEET_HEIGHT_PX,
   SHEET_WIDTH_PX,
-} from "./grid";
-import { useEditor } from "../editorStore";
-import type { GridRect, SheetItem } from "../types";
+} from "../model/grid";
+import type { GridRect, SheetItem } from "../model/types";
+import { useEditor } from "../store/editorStore";
+import styles from "./Sheet.module.scss";
+import { useDeleteShortcut } from "./useDeleteShortcut";
+import { useScreenGuard } from "./useScreenGuard";
 
+// Misure della griglia come variabili CSS: lo SCSS disegna le linee senza
+// ripetere i numeri.
 const gridVars = {
   "--col-width": `${COL_WIDTH_PX}px`,
   "--row-height": `${ROW_HEIGHT_PX}px`,
@@ -35,15 +41,33 @@ const gridConfig = {
   containerPadding: [0, 0] as const,
   maxRows: GRID_ROWS,
 };
-// Posizionamento libero (niente compattazione verso l'alto) e niente
-// sovrapposizioni: un blocco che finisce su un altro torna dov'era.
+
+// Posizionamento libero (niente compattazione verso l'alto) e niente sovrapposizioni.
 const compactor = getCompactor(null, false, true);
+
+// Il trascinamento dei blocchi non è di RGL ma di freeDrag.ts (movimento al
+// pixel, aggancio alla cella solo al rilascio): RGL gestisce solo il resize e
+// il rilascio dalla sidebar.
+const dragConfig = { enabled: false };
+
+// Resize da tutti i lati e angoli (RGL v2 di default ha solo l'angolo in basso a
+// destra); l'aspetto delle maniglie è in Sheet.module.scss.
+const resizeConfig = {
+  enabled: true,
+  handles: ["n", "s", "e", "w", "ne", "nw", "se", "sw"] as const,
+};
+
+// Rilascio dalla sidebar: dimensione del blocco in arrivo = quella del tipo
+// trascinato; senza un blocco della sidebar in corso (es. file dal desktop) rifiuta.
+const dropConfig = {
+  enabled: true,
+  defaultItem: DEFAULT_SIZE.text,
+  onDragOver: () => (dragState.type ? DEFAULT_SIZE[dragState.type] : false),
+};
+
 // Con autoSize={false} RGL non imposta l'altezza del contenitore, ma i vincoli
 // di bordo la usano: la fisso io all'altezza esatta del foglio.
 const containerStyle: CSSProperties = { height: SHEET_HEIGHT_PX };
-// bounded: i blocchi non escono dal foglio. cancel: i controlli interni
-// (textarea, pulsante ×, caricamento immagine) non devono avviare un drag.
-const dragConfig = { bounded: true, cancel: `.${NO_DRAG}` };
 
 // Il modello dati non dipende da RGL: la conversione vive solo qui.
 const toLayout = (items: SheetItem[]): LayoutItem[] =>
@@ -53,35 +77,35 @@ const fromLayout = (layout: Layout): Map<string, GridRect> =>
   new Map(layout.map(({ i, x, y, w, h }) => [i, { x, y, w, h }]));
 
 export default function Sheet() {
-  const { items, selectedId, updateLayouts, select, removeItem } = useEditor();
+  const { items, selectedId, updateLayouts, select, removeItem, addItem } =
+    useEditor();
+  const blurred = useScreenGuard();
+  useDeleteShortcut(selectedId, removeItem);
 
   const handleLayoutChange = useCallback(
     (layout: Layout) => updateLayouts(fromLayout(layout)),
     [updateLayouts],
   );
 
-  // Canc/Backspace elimina il blocco selezionato, ma non mentre si scrive:
-  // altrimenti cancellare una lettera cancellerebbe tutto il blocco.
-  useEffect(() => {
-    if (!selectedId) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Delete" && e.key !== "Backspace") return;
-      // target può non essere un elemento (es. window): in quel caso non si sta scrivendo.
-      const typing =
-        e.target instanceof Element &&
-        e.target.closest("input, textarea, select, [contenteditable]");
-      if (typing) return;
-      e.preventDefault();
-      removeItem(selectedId);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedId, removeItem]);
+  // Rilascio dalla sidebar: RGL ha già calcolato la cella sotto il mouse; il
+  // blocco lo crea addItem, che gestisce collisioni e foglio pieno.
+  const handleDrop = useCallback(
+    (_layout: Layout, dropped: LayoutItem | undefined) => {
+      const type = dragState.type;
+      dragState.type = null;
+      if (type && dropped) addItem(type, { x: dropped.x, y: dropped.y });
+    },
+    [addItem],
+  );
 
   return (
     <div
-      className={styles.sheet}
+      className={`${styles.sheet} ${blurred ? styles.blurred : ""}`}
       style={gridVars}
+      // Niente menu contestuale ("salva immagine"), tranne nel testo per incolla/correzione.
+      onContextMenu={(e) => {
+        if (!(e.target as Element).closest("[contenteditable]")) e.preventDefault();
+      }}
       // Clic sul foglio vuoto (fuori da qualunque blocco) → deseleziona.
       onClick={(e) => {
         if (!(e.target as Element).closest(".react-grid-item")) select(null);
@@ -92,20 +116,37 @@ export default function Sheet() {
         layout={toLayout(items)}
         gridConfig={gridConfig}
         dragConfig={dragConfig}
+        dropConfig={dropConfig}
+        resizeConfig={resizeConfig}
         compactor={compactor}
         autoSize={false}
         style={containerStyle}
         onLayoutChange={handleLayoutChange}
+        onDrop={handleDrop}
       >
+        {/* RGL clona questo div aggiungendo posizione e maniglia di resize:
+            deve restare un elemento DOM diretto, non un componente. */}
         {items.map((item) => {
           const selected = item.id === selectedId;
           return (
             <div
               key={item.id}
-              className={`${styles.item} ${selected ? styles.selected : ""}`}
+              className={`${styles.item} ${selected ? styles.selected : ""} ${
+                item.type === "image" ? styles.round : ""
+              }`}
               onClick={() => select(item.id)}
+              onPointerDown={(e) =>
+                startFreeDrag(
+                  e,
+                  item.layout,
+                  items.filter((i) => i.id !== item.id).map((i) => i.layout),
+                  (rect) => updateLayouts(new Map([[item.id, rect]])),
+                )
+              }
             >
-              <Block item={item} />
+              <div className={styles.content}>
+                <Block item={item} />
+              </div>
               {selected && (
                 <button
                   type="button"
@@ -120,6 +161,8 @@ export default function Sheet() {
           );
         })}
       </ReactGridLayout>
+      {/* Watermark: sopra i blocchi ma trasparente al mouse; assente nel PDF. */}
+      <div className={styles.watermark} aria-hidden="true" />
     </div>
   );
 }

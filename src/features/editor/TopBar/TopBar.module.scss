@@ -1,16 +1,20 @@
-// Barra allineata: gruppi di controlli alti 32px, separati da una linea sottile.
-// Se la larghezza non basta i gruppi vanno a capo, mai fuori schermo.
+// Barra su una sola riga: gruppi di controlli alti 36px, separati da una linea sottile.
+// Se la larghezza non basta prima l'allineamento diventa un menu (container query),
+// poi la barra scorre in orizzontale.
 .topbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  container: topbar / inline-size;
   align-items: center;
-  gap: 8px 4px;
+  gap: 4px;
   padding: 8px 16px;
   min-height: var(--topbar-height);
 }
 
 .hint {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-muted);
 }
 
@@ -18,6 +22,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
+  flex-shrink: 0;
   padding-right: 8px;
   margin-right: 4px;
   border-right: 1px solid var(--color-border);
@@ -27,17 +32,17 @@
   }
 }
 
-// Base comune dei controlli: 32px, angoli morbidi, hover leggero.
+// Base comune dei controlli: 36px, angoli morbidi, hover leggero.
 %control {
-  height: 32px;
+  height: 36px;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
   background: transparent;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   transition:
-    background-color 0.12s ease,
-    border-color 0.12s ease;
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
 
   &:hover:not(:disabled) {
     background: var(--color-control-hover);
@@ -49,7 +54,7 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 32px;
+  width: 36px;
   padding: 0;
 
   &:disabled {
@@ -68,8 +73,8 @@
 .swatch {
   position: absolute;
   bottom: 5px;
-  left: 9px;
-  right: 9px;
+  left: 10px;
+  right: 10px;
   height: 3px;
   border-radius: 2px;
 }
@@ -97,12 +102,12 @@
 
 .font {
   @extend %select;
-  width: 150px;
+  width: 164px;
 }
 
 .size {
   @extend %select;
-  width: 62px;
+  width: 68px;
   margin-left: 2px;
 }
 
@@ -114,15 +119,15 @@
 
   svg {
     position: absolute;
-    left: 9px;
+    left: 10px;
     color: var(--color-muted);
     pointer-events: none;
   }
 
   select {
     @extend %select;
-    padding-left: 30px;
-    width: 86px;
+    padding-left: 32px;
+    width: 94px;
   }
 }
 
@@ -130,4 +135,107 @@
   @extend %control;
   padding: 0 12px;
   border-color: var(--color-border);
+}
+
+// Pannello flottante sotto un pulsante (es. slider dell'opacità): fuori dal flusso,
+// quindi non sposta né allarga nulla nella barra.
+.popoverAnchor {
+  position: relative;
+}
+
+.popover {
+  position: fixed; // top/right inline da PopoverTool (sotto il pulsante, bordo destro allineato)
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-popup);
+  font-size: 12px;
+  color: var(--color-muted);
+
+  input[type="range"] {
+    appearance: none;
+    width: 120px;
+    height: 14px; // spazio per il pallino; il binario è disegnato a parte
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  output {
+    min-width: 36px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// Slider minimale: binario sottile, pallino nel colore accento.
+@mixin slider-track {
+  height: 2px;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+@mixin slider-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-accent);
+  transition: transform var(--transition-fast);
+}
+
+.popover input[type="range"] {
+  &::-webkit-slider-runnable-track {
+    @include slider-track;
+  }
+
+  &::-moz-range-track {
+    @include slider-track;
+  }
+
+  &::-webkit-slider-thumb {
+    @include slider-thumb;
+
+    appearance: none;
+    margin-top: -5px; // centra il pallino (12px) sul binario (2px)
+  }
+
+  &::-moz-range-thumb {
+    @include slider-thumb;
+  }
+
+  &:hover::-webkit-slider-thumb {
+    transform: scale(1.2);
+  }
+}
+
+// Allineamento: quattro pulsanti affiancati, oppure un solo menu hamburger quando
+// la barra è stretta. Soglia misurata: la barra di testo al completo (con lo
+// sfondo del blocco) occupa ~1550px di contenuto con i quattro pulsanti.
+.alignInline {
+  display: contents;
+}
+
+.alignMenu {
+  display: none;
+}
+
+@container topbar (max-width: 1560px) {
+  .alignInline {
+    display: none;
+  }
+
+  .alignMenu {
+    display: block;
+  }
+}
+
+// Le quattro opzioni dell'allineamento dentro il pannello del menu.
+.menuRow {
+  display: flex;
+  gap: 2px;
 }

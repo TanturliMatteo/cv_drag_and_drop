@@ -1,0 +1,73 @@
+// Pezzi di stile condivisi da più componenti. Si usano con
+// `@use "…/styles/mixins" as *;` e poi `@include nome;`.
+
+// Pulsante pieno (default: colore accento). Per CTA, conferme, azioni primarie.
+@mixin solid-button($bg: var(--color-accent)) {
+  border: 0;
+  border-radius: var(--radius-control);
+  background: $bg;
+  color: var(--color-on-accent);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+}
+
+// Pulsante "fantasma": nessun bordo né sfondo, solo un hover leggero.
+@mixin plain-button {
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+
+  &:hover:not(:disabled) {
+    background: var(--color-control-hover);
+  }
+}
+
+// Superficie che galleggia sopra la pagina (dialog, pannelli).
+@mixin floating-surface {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-popup);
+}
+
+// Riquadro tratteggiato per le zone "vuote" (segnaposto immagine, spazio annunci).
+@mixin dashed-box {
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-block);
+}
+
+// Finestra modale su <dialog>: sfondo oscurato, nascosta in stampa.
+@mixin dialog($width, $padding: 24px) {
+  @include floating-surface;
+
+  width: min(#{$width}, calc(100vw - 32px));
+  padding: $padding;
+
+  &::backdrop {
+    background: var(--color-overlay);
+  }
+
+  @media print {
+    display: none;
+  }
+}
+
+@mixin dialog-title {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+@mixin dialog-text {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: var(--color-muted);
+}
